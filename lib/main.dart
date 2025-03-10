@@ -1,90 +1,153 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-// entry point of a flutter app
-void main() {
-  runApp(MyApp()); //start using MyApp
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(MyApp());
 }
 
-//main widget
 class MyApp extends StatelessWidget {
-  //stateless widget - display info and never changes
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: TodoScreen(),
-    ); //sets todoscreen as home screen and siable debugs banner
+    return MaterialApp(debugShowCheckedModeBanner: false, home: AuthChecker());
   }
 }
 
-class TodoScreen extends StatefulWidget {
+class AuthChecker extends StatelessWidget {
   @override
-  TodoScreenState createState() => TodoScreenState(); //creates an instance of TodoScreenState
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return HomeScreen();
+        } else {
+          return LoginScreen();
+        }
+      },
+    );
+  }
 }
 
-//manages todo list
-class TodoScreenState extends State<TodoScreen> {
-  List<String> tasks = []; // List to store tasks
-  TextEditingController taskController =
-      TextEditingController(); //alows to read text inseide the text field
+class LoginScreen extends StatefulWidget {
+  @override
+  _LoginScreenState createState() => _LoginScreenState();
+}
 
-  //adds the task to tasks list
-  void addTask() {
-    setState(() {
-      //update ui
-      if (taskController.text.isNotEmpty) {
-        tasks.add(
-          taskController.text,
-        ); // add the text from taskController to tasks list
-        taskController.clear(); //clear the taskController input field
-      }
-    });
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  Future<void> login() async {
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+    } catch (e) {
+      print("Error: $e");
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      //main structure of the screen
-      appBar: AppBar(title: Text('Simple To-Do List')), //topbar with app name
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0), //adds 8pxs of space around Row
-            child: Row(
-              // enter tasks
-              children: [
-                Expanded(
-                  child: TextField(
-                    //where user enters the task
-                    controller: taskController,
-                    decoration: InputDecoration(hintText: 'Enter task'),
-                  ),
-                ),
-                IconButton(icon: Icon(Icons.add), onPressed: addTask),
-              ],
+      appBar: AppBar(title: Text("Login")),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: emailController,
+              decoration: InputDecoration(labelText: "Email"),
             ),
-          ),
-          Expanded(
-            //displying tasks
-            child: ListView.builder(
-              itemCount: tasks.length, //how many items to display
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(tasks[index]),
-                  trailing: IconButton(
-                    icon: Icon(Icons.delete),
-                    onPressed: () {
-                      setState(() {
-                        tasks.removeAt(index);
-                      });
-                    },
-                  ),
-                ); //display task at position index
+            TextField(
+              controller: passwordController,
+              decoration: InputDecoration(labelText: "Password"),
+              obscureText: true,
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(onPressed: login, child: Text("Login")),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => SignupScreen()),
+                );
               },
+              child: Text("Don't have an account? Sign Up"),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class SignupScreen extends StatefulWidget {
+  @override
+  _SignupScreenState createState() => _SignupScreenState();
+}
+
+class _SignupScreenState extends State<SignupScreen> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  Future<void> signUp() async {
+    try {
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+    } catch (e) {
+      print("Error: $e");
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("Sign Up")),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: emailController,
+              decoration: InputDecoration(labelText: "Email"),
+            ),
+            TextField(
+              controller: passwordController,
+              decoration: InputDecoration(labelText: "Password"),
+              obscureText: true,
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(onPressed: signUp, child: Text("Sign Up")),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class HomeScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Home"),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+            },
           ),
         ],
       ),
+      body: Center(child: Text("Welcome to Home Screen!")),
     );
   }
 }

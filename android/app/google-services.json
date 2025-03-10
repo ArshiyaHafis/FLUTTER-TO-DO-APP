@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "469929703900",
+    "project_id": "gsc-auth-e955f",
+    "storage_bucket": "gsc-auth-e955f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:469929703900:android:44bac962212881fcc1f719",
+        "android_client_info": {
+          "package_name": "com.test.gsc"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDIecbkCbpsu__kWGUsTuZb9-NXFB4AkLE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

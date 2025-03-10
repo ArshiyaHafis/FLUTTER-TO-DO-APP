@@ -1,4 +1,4 @@
-package com.example.gsc
+package com.test.gsc
 
 import io.flutter.embedding.android.FlutterActivity
 
