@@ -1,11 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   runApp(MyApp());
+}
+
+class Authentication {
+  static final GoogleSignIn _googleSignIn = GoogleSignIn();
+  static final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  static Future<User?> signInWithGoogle({required BuildContext context}) async {
+    try {
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) return null;
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithCredential(credential);
+      print("Signed in as: ${userCredential.user?.displayName}");
+      return userCredential.user;
+    } catch (e) {
+      print("Sign-in failed: $e");
+      return null;
+    }
+  }
+
+  static Future<void> signOut({required BuildContext context}) async {
+    try {
+      if (!kIsWeb) {
+        await _googleSignIn.signOut();
+      }
+      await _auth.signOut();
+    } catch (e) {
+      print("Sign-out error: $e");
+    }
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -47,7 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
         password: passwordController.text.trim(),
       );
     } catch (e) {
-      print("Error: $e");
+      print("Login error: $e");
     }
   }
 
@@ -79,6 +120,13 @@ class _LoginScreenState extends State<LoginScreen> {
               },
               child: Text("Don't have an account? Sign Up"),
             ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () async {
+                await Authentication.signInWithGoogle(context: context);
+              },
+              child: Text("Sign in with Google"),
+            ),
           ],
         ),
       ),
@@ -102,7 +150,7 @@ class _SignupScreenState extends State<SignupScreen> {
         password: passwordController.text.trim(),
       );
     } catch (e) {
-      print("Error: $e");
+      print("Signup error: $e");
     }
   }
 
@@ -125,6 +173,14 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
             SizedBox(height: 20),
             ElevatedButton(onPressed: signUp, child: Text("Sign Up")),
+            SizedBox(height: 20),
+            // Add Google Sign-Up button here
+            ElevatedButton(
+              onPressed: () async {
+                await Authentication.signInWithGoogle(context: context);
+              },
+              child: Text("Sign up with Google"),
+            ),
           ],
         ),
       ),
@@ -142,12 +198,14 @@ class HomeScreen extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.logout),
             onPressed: () async {
-              await FirebaseAuth.instance.signOut();
+              await Authentication.signOut(context: context);
             },
           ),
         ],
       ),
-      body: Center(child: Text("Welcome to Home Screen!")),
+      body: Center(
+        child: Text("Welcome to Home Screen!", style: TextStyle(fontSize: 24)),
+      ),
     );
   }
 }
